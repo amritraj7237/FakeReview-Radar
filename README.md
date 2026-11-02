@@ -21,17 +21,47 @@ Polaris OJT 2026 · Data Analysis track · 8 weeks.
 
 ## Setup
 
+Needs **Python 3.11 or newer** (check with `python --version`; on macOS/Linux
+the command may be `python3`). Run everything from the repo folder.
+
 ```bash
+# 1. get the code
 git clone https://github.com/amritraj7237/FakeReview-Radar.git
 cd FakeReview-Radar
-python -m venv .venv
-# Windows:      .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
+
+# 2. create a virtual environment (once) and activate it (every new terminal)
+# Windows:      python -m venv .venv      then  .venv\Scripts\activate
+# macOS/Linux:  python3 -m venv .venv     then  source .venv/bin/activate
+#  -> your prompt now starts with (.venv)
+
+# 3. install the exact package versions
 pip install -r requirements.txt
 
-# regenerate the synthetic dataset (same seed -> same CSV)
+# 4. check it worked (prints nothing and no error = OK)
+python -c "import pandas, numpy, matplotlib, scipy"
+pytest                          # all tests should pass
+
+# 5. regenerate the synthetic dataset (same seed -> same CSV)
 python analysis/generate_synthetic.py --seed 42
 ```
+
+Why a virtual environment: each project gets its own package versions, so this
+project can't break (or be broken by) anything else on your laptop, and anyone
+can rebuild the same setup from `requirements.txt`.
+
+**Real data sample** (not in git, ~3.5 MB). macOS/Linux, or Git Bash on Windows:
+
+```bash
+mkdir -p data/raw
+curl -sL https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/Electronics.jsonl \
+  | head -n 5000 > data/raw/electronics_sample.jsonl
+python analysis/inspect_sample.py      # prints the Week 1 findings, saves charts to outputs/
+```
+
+Troubleshooting:
+- `python: command not found` on macOS → use `python3`.
+- Windows: `activate` blocked by execution policy → run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` in PowerShell once.
+- `No matching distribution found for pandas==3.1.0` → your Python is older than 3.11. Install a newer Python and recreate `.venv`.
 
 ## Project structure
 
@@ -54,6 +84,10 @@ the code, without ever risking the source data.
 ### Week 1
 
 - Amrit:
-- Chirag:
+- Chirag: Python environment and `requirements.txt` with setup steps; data
+  dictionary with raw-Amazon mapping and product table; cleaning rules with a
+  10-row dirty test fixture; rating metrics (`analysis/radar/metrics.py`,
+  checked against paper answers and scipy); loaded and inspected the first
+  5,000 real Electronics reviews (`docs/WEEK1_FINDINGS.md`).
 - What we learned:
 - What's next:

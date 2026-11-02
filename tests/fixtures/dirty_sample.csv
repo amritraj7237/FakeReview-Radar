@@ -1,0 +1,11 @@
+review_id,product_id,reviewer_id,rating,review_date,verified_purchase,review_title,review_text,helpful_votes,source
+R01,P001,U01,5,2022-07-18,True,Great sound,Clear audio and the battery lasts all day.,3,fixture
+R02,P001,U02,7,2022-07-19,True,Good,Works as described.,0,fixture
+R03,P001,U03,,2022-07-20,False,Meh,It is okay for the price.,1,fixture
+R01,P001,U01,5,2022-07-18,True,Great sound,Clear audio and the battery lasts all day.,3,fixture
+R05,P001,U01,5,2022-07-18,True,Great sound,Clear audio and the battery lasts all day.,3,fixture
+R06,P001,U04,4,2023-02-30,True,Nice,Solid build quality.,0,fixture
+R07,P001,U05,1,2022-08-01,,Broke,Stopped working after a week.,2,fixture
+R08,P001,U06,5,2022-08-02,True,Love it,,0,fixture
+R09,P001,U07,3,1658185117948,False,Average,Does the job but nothing special.,0,fixture
+R10,P002,U08,5,2022-09-10,True,Perfect,Exactly what I needed.,0,fixture
