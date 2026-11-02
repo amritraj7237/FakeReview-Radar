@@ -1,0 +1,19 @@
+# Python environments
+venv/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large raw data never goes in the repo (only small samples < 5 MB)
+data/raw/
+
+# Editor / OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
