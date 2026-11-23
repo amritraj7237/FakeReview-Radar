@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FakeReview Radar</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<style>
+  :root {
+    --surface: #fcfcfb; --page: #f9f9f7; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --base: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+    --good: #0ca30c; --warning: #fab219; --critical: #d03b3b; --good-text: #006300;
+  }
+  [data-bs-theme="dark"] {
+    --surface: #1a1a19; --page: #0d0d0d; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --base: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --good-text: #0ca30c;
+  }
+  body { background: var(--page); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .card-title { font-size: .95rem; font-weight: 600; }
+  .sub { color: var(--ink-2); font-size: .85rem; }
+  .muted { color: var(--muted); font-size: .8rem; }
+  .hero { font-size: 3.2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tile .value { font-size: 1.6rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .band { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem; border-radius: 999px;
+          font-size: .8rem; font-weight: 600; border: 1px solid var(--border); }
+  .band .dot { width: .6rem; height: .6rem; border-radius: 50%; }
+  .product-list { max-height: 70vh; overflow-y: auto; }
+  .product-list .list-group-item { background: var(--surface); color: var(--ink); border-color: var(--border); cursor: pointer; }
+  .product-list .list-group-item.active { background: color-mix(in srgb, var(--series-1) 14%, var(--surface));
+          color: var(--ink); border-color: var(--series-1); }
+  .score-pill { min-width: 2.6rem; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bar-track { background: var(--grid); border-radius: 4px; height: .55rem; }
+  .bar-fill { height: .55rem; border-radius: 4px; background: var(--series-2); }
+  .chart-box { position: relative; height: 230px; }
+  .confusion { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; max-width: 360px; font-variant-numeric: tabular-nums; }
+  .confusion div { padding: .55rem; border-radius: 6px; text-align: center; }
+  .confusion .cell { font-size: 1.3rem; font-weight: 650; }
+  .table { --bs-table-bg: transparent; color: var(--ink); font-size: .85rem; }
+  .nav-tabs .nav-link { color: var(--ink-2); }
+  .nav-tabs .nav-link.active { background: var(--surface); color: var(--ink); }
+  .disclaimer { border-left: 4px solid var(--warning); background: var(--surface); }
+  code { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="container-xl py-3 px-3">
+  <header class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
+    <div>
+      <h1 class="h3 mb-0">FakeReview Radar</h1>
+      <div class="sub">Review quality &amp; rating-skew analyzer · PST_DA_006 · Chirag Malik &amp; Amrit Rai</div>
+    </div>
+    <div class="muted" id="generated"></div>
+  </header>
+
+  <div class="disclaimer p-2 px-3 mb-3 rounded sub">
+    <strong>Heuristic indicator, not proof.</strong> The trust score (1–100) summarises warning signals in the
+    ratings, verification and review dates. A low score means “worth a closer look”, never “this seller is
+    fraudulent”. It is not a probability that the reviews are genuine.
+  </div>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-products">Products</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-eval">Evaluation</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-real">Real-data analysis</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-quality">Data quality</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-method">How it works</button></li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- PRODUCTS -->
+    <section class="tab-pane fade show active" id="tab-products">
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <div class="card p-3">
+            <label class="form-label sub mb-1" for="dataset">Dataset</label>
+            <select class="form-select form-select-sm mb-2" id="dataset"></select>
+            <div class="btn-group btn-group-sm flex-wrap mb-2" role="group" id="band-filter"></div>
+            <input class="form-control form-control-sm mb-2" id="search" placeholder="Search product ID or pattern">
+            <div class="muted mb-1" id="list-count"></div>
+            <div class="list-group list-group-flush product-list" id="product-list"></div>
+          </div>
+        </div>
+        <div class="col-lg-8" id="detail"></div>
+      </div>
+    </section>
+
+    <!-- EVALUATION -->
+    <section class="tab-pane fade" id="tab-eval">
+      <p class="sub">Synthetic products have known labels, so we can measure the flag (trust &lt; 66). The signal
+        settings were chosen on the <em>tuning</em> set (seed 42) and real data only. The <em>test</em> set (seed 7) was
+        not used while tuning. The <em>stress</em> set uses smaller, slower, better-hidden attacks the rules never saw.
+        These numbers are about simulated patterns, not accuracy on real-world fake reviews.</p>
+      <div id="eval"></div>
+    </section>
+
+    <!-- REAL -->
+    <section class="tab-pane fade" id="tab-real"><div id="real"></div></section>
+
+    <!-- QUALITY -->
+    <section class="tab-pane fade" id="tab-quality"><div id="quality"></div></section>
+
+    <!-- METHOD -->
+    <section class="tab-pane fade" id="tab-method">
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="card p-3 h-100">
+            <div class="card-title mb-2">From reviews to a trust score</div>
+            <ol class="sub mb-2">
+              <li><strong>Clean</strong> the reviews (rules R0–R8, every change logged; see Data quality).</li>
+              <li><strong>Count stars</strong> per product, shrink the shares toward a typical product
+                (k = 10 imaginary reviews) so tiny products aren’t flagged by luck.</li>
+              <li><strong>Measure four warning signals</strong>, each a strength <em>s</em> from 0 to 1, or “not measured”.</li>
+              <li><strong>Combine</strong> them with noisy-OR: <code>R = 1 − Π(1 − c·s)</code>, then
+                <code>Trust = round(1 + 99 × (1 − R))</code>.</li>
+            </ol>
+            <table class="table table-sm align-middle">
+              <thead><tr><th>Signal</th><th>Looks for</th><th>Reliability c</th><th>Not measured when</th></tr></thead>
+              <tbody id="signal-table"></tbody>
+            </table>
+            <div class="sub">One strong signal can pull the score down on its own; several weak ones add up; a signal
+              that is silent or missing never raises the score. BSI alone can only lower trust to 51, because
+              polarised ratings have innocent causes (a genuinely divisive product).</div>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="card p-3 mb-3">
+            <div class="card-title mb-2">Bands</div>
+            <div id="band-legend" class="d-flex flex-column gap-2"></div>
+            <div class="muted mt-2">Products with fewer than 5 valid ratings get no score (“insufficient data”);
+              5–19 ratings get a low-sample warning.</div>
+          </div>
+          <div class="card p-3">
+            <div class="card-title mb-2">Limitations</div>
+            <ul class="sub mb-0">
+              <li>No real fake/real labels exist. Accuracy is measured on simulated data only.</li>
+              <li>Real data: first 1,000,000 lines of Amazon Reviews 2023 Electronics, i.e. all reviews by a set of
+                reviewers, so each product shows a subset of its reviews and bursts are thinned out.</li>
+              <li>Small, slow attacks (stress set) mostly get through.</li>
+              <li>Text, reviewer history and seller data are not used.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+"use strict";
+const D = window.RADAR;
+const SIGNALS = [
+  ["bsi", "BSI (two-peaked split)", "1★ and 5★ peaks with an empty middle", "< 5 ratings"],
+  ["inflation", "5★ inflation", "5★ share above 75% with a thin 4★ bar", "< 5 ratings"],
+  ["unverified", "Unverified reviews", "unverified share above 15%, plus a rating gap", "< 5 known-status reviews"],
+  ["burst", "Date burst", "too many reviews in one 7- or 30-day window", "< 10 dated reviews"],
+];
+const charts = {};
+let state = { dataset: null, band: "all", query: "", selected: null };
+
+// ---------- theme: follow the OS (or ?theme=light / ?theme=dark), charts read CSS variables
+const media = window.matchMedia("(prefers-color-scheme: dark)");
+const forcedTheme = new URLSearchParams(location.search).get("theme");
+const themeName = () => forcedTheme || (media.matches ? "dark" : "light");
+function applyTheme() {
+  document.documentElement.setAttribute("data-bs-theme", themeName());
+  if (state.selected) renderDetail(state.selected);
+  renderEval(); renderReal();
+}
+media.addEventListener("change", applyTheme);
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function chartDefaults() {
+  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = css("--ink-2");
+  Chart.defaults.borderColor = css("--grid");
+}
+function makeChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  const el = document.getElementById(id);
+  if (!el) return;
+  chartDefaults();
+  config.options = Object.assign({ responsive: true, maintainAspectRatio: false, animation: false }, config.options || {});
+  charts[id] = new Chart(el, config);
+}
+
+// ---------- helpers
+const pct = (x, d = 0) => x == null ? "–" : (x * 100).toFixed(d) + "%";
+const fmt = (x, d = 2) => x == null ? "–" : Number(x).toFixed(d);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function bandInfo(band) {
+  return {
+    "looks genuine": { color: css("--good"), icon: "✓", label: "Looks genuine" },
+    "mixed signals": { color: css("--warning"), icon: "!", label: "Mixed signals" },
+    "suspicious": { color: css("--critical"), icon: "✕", label: "Suspicious" },
+    "insufficient data": { color: css("--muted"), icon: "?", label: "Insufficient data" },
+  }[band];
+}
+function bandBadge(band) {
+  const b = bandInfo(band);
+  return `<span class="band"><span class="dot" style="background:${b.color}"></span>${b.icon} ${b.label}</span>`;
+}
+function weeksToSeries(weeks) {
+  if (!weeks.length) return { labels: [], values: [], unit: "week" };
+  const first = weeks[0][0], last = weeks[weeks.length - 1][0];
+  const map = new Map(weeks);
+  const toDate = (w) => new Date(w * 7 * 86400000);
+  if (last - first <= 110) {
+    const labels = [], values = [];
+    for (let w = first; w <= last; w++) { labels.push(toDate(w).toISOString().slice(0, 10)); values.push(map.get(w) || 0); }
+    return { labels, values, unit: "week" };
+  }
+  const months = new Map();
+  for (const [w, c] of weeks) { const k = toDate(w).toISOString().slice(0, 7); months.set(k, (months.get(k) || 0) + c); }
+  const [y0, m0] = toDate(first).toISOString().slice(0, 7).split("-").map(Number);
+  const [y1, m1] = toDate(last).toISOString().slice(0, 7).split("-").map(Number);
+  const labels = [], values = [];
+  for (let y = y0, m = m0; y < y1 || (y === y1 && m <= m1); m === 12 ? (y++, m = 1) : m++) {
+    const k = `${y}-${String(m).padStart(2, "0")}`; labels.push(k); values.push(months.get(k) || 0);
+  }
+  return { labels, values, unit: "month" };
+}
+
+// ---------- products tab
+function setupProducts() {
+  const sel = document.getElementById("dataset");
+  const order = ["real", "test", "stress"].filter((k) => D.datasets[k]);
+  sel.innerHTML = order.map((k) => `<option value="${k}">${esc(D.datasets[k].label)}</option>`).join("");
+  sel.addEventListener("change", () => { state.dataset = sel.value; state.selected = null; renderList(); });
+  const bands = [["all", "All"], ["flagged", "Flagged"], ["looks genuine", "Genuine"], ["mixed signals", "Mixed"],
+                 ["suspicious", "Suspicious"]];
+  const group = document.getElementById("band-filter");
+  group.innerHTML = bands.map(([k, l]) => `<button type="button" class="btn btn-outline-secondary${k === "all" ? " active" : ""}" data-band="${k}">${l}</button>`).join("");
+  group.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    group.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+    state.band = b.dataset.band; renderList();
+  });
+  document.getElementById("search").addEventListener("input", (e) => { state.query = e.target.value.trim().toLowerCase(); renderList(); });
+  state.dataset = order[0];
+  renderList();
+}
+
+function filtered() {
+  const ds = D.datasets[state.dataset];
+  return ds.products.filter((p) => {
+    if (state.band === "flagged" && !p.flag) return false;
+    if (!["all", "flagged"].includes(state.band) && p.band !== state.band) return false;
+    if (state.query && !(p.id.toLowerCase().includes(state.query) || (p.pattern || "").includes(state.query))) return false;
+    return true;
+  }).sort((a, b) => (a.trust ?? 101) - (b.trust ?? 101));
+}
+
+function renderList() {
+  const ds = D.datasets[state.dataset];
+  const items = filtered();
+  const note = ds.kind === "real" ? ` (all ${ds.products.filter((p) => p.flag).length} flagged + a random sample of the rest)` : "";
+  document.getElementById("list-count").textContent = `${items.length} of ${ds.products.length} products shown${note}, lowest trust first`;
+  const list = document.getElementById("product-list");
+  list.innerHTML = items.slice(0, 400).map((p) => {
+    const b = bandInfo(p.band);
+    return `<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="${esc(p.id)}">
+      <span><span class="fw-semibold">${esc(p.id)}</span><br><span class="muted">${p.rated} ratings${p.pattern ? " · " + esc(p.pattern) : ""}</span></span>
+      <span class="score-pill" title="${b.label}"><span class="dot d-inline-block rounded-circle me-1" style="width:.55rem;height:.55rem;background:${b.color}"></span>${p.trust ?? "–"}</span></button>`;
+  }).join("");
+  list.onclick = (e) => { const b = e.target.closest("[data-id]"); if (b) select(b.dataset.id); };
+  if (items.length) select(state.selected && items.find((p) => p.id === state.selected.id) ? state.selected.id : items[0].id);
+  else document.getElementById("detail").innerHTML = `<div class="card p-4 sub">No products match this filter.</div>`;
+}
+
+function select(id) {
+  const p = D.datasets[state.dataset].products.find((x) => x.id === id);
+  state.selected = p;
+  document.querySelectorAll("#product-list [data-id]").forEach((el) => el.classList.toggle("active", el.dataset.id === id));
+  renderDetail(p);
+}
+
+function renderDetail(p) {
+  const ds = D.datasets[state.dataset];
+  const c = D.method.reliability;
+  const truth = p.pattern ? `<span class="band ms-1">Simulated pattern: ${esc(p.pattern)} (${p.manipulated ? "manipulated" : "genuine"})</span>` : "";
+  const reasons = p.reasons.length ? p.reasons.map((r) => `<li>${esc(r)}</li>`).join("")
+    : `<li class="sub">No warning signal is strong enough to list.</li>`;
+  const breakdown = SIGNALS.map(([k, label]) => {
+    const s = p.s[k];
+    if (s == null) return `<div class="mb-2"><div class="d-flex justify-content-between sub"><span>${label}</span><span class="muted">not measured</span></div><div class="bar-track"></div></div>`;
+    const contrib = c[k] * s;
+    return `<div class="mb-2"><div class="d-flex justify-content-between sub"><span>${label}</span>
+      <span>s = ${fmt(s)} × c = ${c[k]} → <strong>${fmt(contrib)}</strong></span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(contrib / 0.7) * 100}%"></div></div></div>`;
+  }).join("");
+  const warn = p.warning ? `<div class="alert alert-warning py-2 sub mb-3">⚠ ${esc(p.warning)}</div>` : "";
+  document.getElementById("detail").innerHTML = `
+    <div class="card p-3 mb-3">
+      <div class="d-flex flex-wrap justify-content-between gap-2">
+        <div><div class="h5 mb-0">${esc(p.id)}</div>
+          <div class="sub">${esc(ds.label)} · ${p.n} reviews, ${p.rated} valid ratings · ${p.first ?? "?"} to ${p.last ?? "?"}</div>${truth}</div>
+        <div class="text-end"><div class="hero">${p.trust ?? "–"}</div><div class="muted mb-1">trust score (heuristic, 1–100)</div>${bandBadge(p.band)}</div>
+      </div>
+    </div>
+    ${warn}
+    <div class="row g-3">
+      <div class="col-md-6"><div class="card p-3 h-100"><div class="card-title">Top reasons</div><ul class="sub ps-3 mb-0 mt-1">${reasons}</ul></div></div>
+      <div class="col-md-6"><div class="card p-3 h-100"><div class="card-title mb-1">Suspicion indicator breakdown</div>
+        <div class="muted mb-2">Each bar is c × s, what the signal adds to the combined risk (R = ${fmt(p.risk)}).</div>${breakdown}</div></div>
+      <div class="col-md-6"><div class="card p-3"><div class="card-title">Rating distribution</div>
+        <div class="muted">n = ${p.rated} ratings · mean ${fmt(p.mean)}★</div><div class="chart-box"><canvas id="c-dist"></canvas></div></div></div>
+      <div class="col-md-6"><div class="card p-3"><div class="card-title">Verified vs unverified</div>
+        <div class="muted">share of each group's ratings · ${p.split[0].reduce((a, b) => a + b, 0)} verified, ${p.split[1].reduce((a, b) => a + b, 0)} unverified, ${p.split[2].reduce((a, b) => a + b, 0)} unknown</div>
+        <div class="chart-box"><canvas id="c-ver"></canvas></div></div></div>
+      <div class="col-12"><div class="card p-3"><div class="card-title">Review volume over time</div>
+        <div class="muted" id="vol-note"></div><div class="chart-box"><canvas id="c-vol"></canvas></div></div></div>
+      <div class="col-12"><div class="card p-3"><div class="card-title mb-2">Rating metrics (observed)</div>
+        <table class="table table-sm mb-0"><tbody><tr>
+          <td>Mean<br><strong>${fmt(p.mean)}</strong></td><td>Variance<br><strong>${fmt(p.variance)}</strong></td>
+          <td>Skewness<br><strong>${fmt(p.skewness)}</strong></td><td>Kurtosis<br><strong>${fmt(p.kurtosis)}</strong></td>
+          <td>BSI<br><strong>${fmt(p.s.bsi)}</strong></td><td>Unverified<br><strong>${pct(p.pctUnverified)}</strong></td>
+        </tr></tbody></table></div></div>
+    </div>`;
+
+  const labels = ["1★", "2★", "3★", "4★", "5★"];
+  const total = p.counts.reduce((a, b) => a + b, 0) || 1;
+  makeChart("c-dist", { type: "bar",
+    data: { labels, datasets: [{ label: "share of ratings", data: p.counts.map((x) => x / total), backgroundColor: css("--series-1"), borderRadius: 4, maxBarThickness: 46 }] },
+    options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${pct(ctx.raw, 1)} (${p.counts[ctx.dataIndex]} reviews)` } } },
+               scales: { y: { ticks: { callback: (v) => pct(v) }, beginAtZero: true }, x: { grid: { display: false } } } } });
+
+  const groups = [["verified", "--series-1"], ["unverified", "--series-2"], ["unknown", "--series-3"]];
+  const verSets = groups.map(([g, col], i) => {
+    const t = p.split[i].reduce((a, b) => a + b, 0);
+    return t ? { label: `${g} (n=${t})`, data: p.split[i].map((x) => x / t), raw: p.split[i], backgroundColor: css(col), borderRadius: 4, maxBarThickness: 30 } : null;
+  }).filter(Boolean);
+  makeChart("c-ver", { type: "bar", data: { labels, datasets: verSets },
+    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } },
+                          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${pct(ctx.raw, 1)} (${ctx.dataset.raw[ctx.dataIndex]})` } } },
+               scales: { y: { ticks: { callback: (v) => pct(v) }, beginAtZero: true }, x: { grid: { display: false } } } } });
+
+  const vol = weeksToSeries(p.weeks);
+  document.getElementById("vol-note").textContent = `${p.weeks.reduce((a, w) => a + w[1], 0)} dated reviews per ${vol.unit}` +
+    (p.s.burst > 0 ? " · a burst was detected (see reasons)" : "");
+  makeChart("c-vol", { type: "bar",
+    data: { labels: vol.labels, datasets: [{ label: `reviews per ${vol.unit}`, data: vol.values, backgroundColor: css("--series-1"), borderRadius: 2, barPercentage: 1, categoryPercentage: 0.9 }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { beginAtZero: true, ticks: { precision: 0 } } } } });
+}
+
+// ---------- evaluation tab
+function tile(label, value, note = "") {
+  return `<div class="col-6 col-md-3"><div class="card p-3 tile h-100"><div class="sub">${label}</div><div class="value">${value}</div><div class="muted">${note}</div></div></div>`;
+}
+function confusion(s) {
+  const cell = (v, strong) => `<div class="cell" style="background:${strong ? "color-mix(in srgb, var(--series-1) 30%, var(--surface))" : "var(--grid)"}">${v}</div>`;
+  return `<div class="confusion sub">
+    <div></div><div class="muted">not flagged</div><div class="muted">flagged</div>
+    <div class="text-end muted">genuine</div>${cell(s.tn, true)}${cell(s.fp, false)}
+    <div class="text-end muted">manipulated</div>${cell(s.fn, false)}${cell(s.tp, true)}</div>
+    <div class="muted mt-1">rows = ground truth, columns = prediction</div>`;
+}
+function renderEval() {
+  const E = D.evaluation;
+  let html = "";
+  for (const name of ["test", "stress"]) {
+    const s = E.summary[name];
+    html += `<h2 class="h5 mt-2">${name === "test" ? "Test set (seed 7): headline result" : "Stress set (seed 7, hard profile): where it breaks"}</h2>
+      <div class="row g-3 mb-3">${tile("Accuracy", pct(s.accuracy, 1), `${s.products} products`)}${tile("Precision", pct(s.precision, 1), "flagged that were manipulated")}
+      ${tile("Recall", pct(s.recall, 1), "manipulated that were flagged")}${tile("F1", fmt(s.f1, 3), "")}</div>
+      <div class="row g-3 mb-4">
+        <div class="col-lg-4"><div class="card p-3 h-100"><div class="card-title mb-2">Confusion matrix</div>${confusion(s)}</div></div>
+        <div class="col-lg-8"><div class="card p-3 h-100"><div class="card-title mb-2">Flag rate per simulated pattern</div>
+          <table class="table table-sm align-middle mb-0"><thead><tr><th>Pattern</th><th>Truth</th><th>Flagged</th><th style="width:35%"></th><th>Median trust</th></tr></thead><tbody>
+          ${E[name].perPattern.map((r) => `<tr><td>${r.pattern}</td><td>${r.manipulated ? "manipulated" : "genuine"}</td><td>${r.flagged}/${r.products}</td>
+            <td><div class="bar-track"><div class="bar-fill" style="width:${r.flag_rate * 100}%;background:var(--${r.manipulated ? "series-2" : "series-1"})"></div></div></td><td>${r.median_trust}</td></tr>`).join("")}
+          </tbody></table></div></div>
+        <div class="col-lg-6"><div class="card p-3 h-100"><div class="card-title mb-2">Each signal on its own</div>
+          <table class="table table-sm mb-0"><thead><tr><th>Signal alone</th><th>Accuracy</th><th>Precision</th><th>Recall</th></tr></thead><tbody>
+          ${E[name].singleSignal.map((r) => `<tr><td>${r.signal}</td><td>${pct(r.accuracy, 1)}</td><td>${pct(r.precision, 1)}</td><td>${pct(r.recall, 1)}</td></tr>`).join("")}
+          <tr><td><strong>all four combined</strong></td><td><strong>${pct(s.accuracy, 1)}</strong></td><td><strong>${pct(s.precision, 1)}</strong></td><td><strong>${pct(s.recall, 1)}</strong></td></tr>
+          </tbody></table></div></div>
+        <div class="col-lg-6"><div class="card p-3 h-100"><div class="card-title mb-2">Mistakes (${E[name].errors.length})</div>
+          <div style="max-height:260px;overflow-y:auto"><table class="table table-sm mb-0"><thead><tr><th>Error</th><th>Product</th><th>Pattern</th><th>Trust</th></tr></thead><tbody>
+          ${E[name].errors.slice(0, 120).map((r) => `<tr title="${esc(r.reason_1)}"><td>${r.error}</td><td>${r.product_id}</td><td>${r.pattern}</td><td>${r.trust_score}</td></tr>`).join("") || `<tr><td colspan="4" class="sub">None</td></tr>`}
+          </tbody></table></div></div></div>
+      </div>`;
+  }
+  document.getElementById("eval").innerHTML = html;
+}
+
+// ---------- real-data tab
+function renderReal() {
+  const R = D.datasets.real;
+  const box = document.getElementById("real");
+  if (!R) { box.innerHTML = `<div class="card p-4 sub">Real data not loaded. Run <code>python analysis/download_sample.py</code>, then <code>python analysis/run_pipeline.py</code>.</div>`; return; }
+  const s = R.summary;
+  const v = Object.fromEntries(R.verified.map((r) => [r.group, r]));
+  box.innerHTML = `
+    <div class="row g-3 mb-3">${tile("Reviews analysed", s.reviews_after_cleaning.toLocaleString(), `${s.date_range[0]} to ${s.date_range[1]}`)}
+      ${tile("Products", s.products.toLocaleString(), "with ≥ 20 reviews before cleaning")}
+      ${tile("Flagged", pct(s.flag_rate_ok_products, 1), `${s.flagged_products} products, trust < 66`)}
+      ${tile("Verified reviews", pct(s.pct_verified_reviews, 1), "unknown status: 0")}</div>
+    <div class="row g-3">
+      <div class="col-lg-6"><div class="card p-3"><div class="card-title">Verified vs unverified (all reviews)</div>
+        <div class="muted">Observed: unverified buyers give more 1★ (${pct(v.unverified.p1)} vs ${pct(v.verified.p1)}) and a lower mean (${fmt(v.unverified.mean)} vs ${fmt(v.verified.mean)}).</div>
+        <div class="chart-box"><canvas id="r-ver"></canvas></div></div></div>
+      <div class="col-lg-6"><div class="card p-3"><div class="card-title">Trust scores of real products</div>
+        <div class="muted">Heuristic. Most products look genuine; ${s.flagged_products} of ${s.products.toLocaleString()} are flagged for a closer look.</div>
+        <div class="chart-box"><canvas id="r-trust"></canvas></div></div></div>
+      <div class="col-12"><div class="card p-3"><div class="card-title">Review volume over time (all products)</div>
+        <div class="muted">Observed. Volume follows Amazon's growth, so bursts are judged against each product's own history.</div>
+        <div class="chart-box"><canvas id="r-vol"></canvas></div></div></div>
+      <div class="col-12"><div class="card p-3 sub"><div class="card-title mb-1">What fires on real data</div>
+        Signals contributing at least 0.05 to the risk: BSI on ${s.reason_counts.bsi.toLocaleString()} products, 5★ inflation on ${s.reason_counts.inflation},
+        unverified on ${s.reason_counts.unverified}, date burst on ${s.reason_counts.burst}. Bursts are equally common among highly polarised
+        products (BSI ≥ 0.3: ${pct(s.burst_rate_high_bsi, 1)}) and the rest (${pct(s.burst_rate_low_bsi, 1)}), so in this sample polarisation and review velocity are not linked.</div></div>
+    </div>`;
+  const labels = ["1★", "2★", "3★", "4★", "5★"];
+  makeChart("r-ver", { type: "bar", data: { labels, datasets: [["verified", "--series-1"], ["unverified", "--series-2"]].map(([g, col]) => ({
+      label: `${g} (n=${v[g].reviews.toLocaleString()})`, data: [1, 2, 3, 4, 5].map((k) => v[g]["p" + k]), backgroundColor: css(col), borderRadius: 4, maxBarThickness: 34 })) },
+    options: { plugins: { legend: { position: "bottom", labels: { boxWidth: 10 } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${pct(ctx.raw, 1)}` } } },
+               scales: { y: { ticks: { callback: (x) => pct(x) } }, x: { grid: { display: false } } } } });
+  const mids = R.trustHistogram.map((_, i) => 3 + i * 5);
+  makeChart("r-trust", { type: "bar", data: { labels: mids.map((m) => `${m - 2}–${m + 2}`), datasets: [{ label: "products",
+      data: R.trustHistogram, backgroundColor: mids.map((m) => css(m >= 66 ? "--good" : m >= 45 ? "--warning" : "--critical")), borderRadius: 3 }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { type: "logarithmic", title: { display: true, text: "products (log scale)" } },
+               x: { grid: { display: false }, title: { display: true, text: "trust score" } } } } });
+  makeChart("r-vol", { type: "line", data: { labels: R.monthly.map((m) => m[0].slice(0, 7)), datasets: [{ label: "reviews per month",
+      data: R.monthly.map((m) => m[1]), borderColor: css("--series-1"), borderWidth: 2, pointRadius: 0, tension: 0.2 }] },
+    options: { interaction: { mode: "index", intersect: false }, plugins: { legend: { display: false } },
+               scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } }, y: { beginAtZero: true } } } });
+}
+
+// ---------- data quality tab
+function renderQuality() {
+  const names = { real: "Real Amazon Electronics sample", synthetic: "Synthetic sets (tuning, test, stress)" };
+  document.getElementById("quality").innerHTML = `<p class="sub">Every cleaning rule writes a row on every run, even when it affects nothing,
+    so a 0 proves the check ran. Only exact duplicates (R3) are removed; nothing is silently deleted and no missing value is invented.</p>` +
+    Object.entries(D.cleaningLogs).map(([k, rows]) => `<div class="card p-3 mb-3"><div class="card-title mb-2">${names[k]}</div>
+      <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>${k === "synthetic" ? "<th>Set</th>" : ""}<th>Rule</th><th>Action</th><th>Rows</th><th>Detail</th><th>Examples</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr>${k === "synthetic" ? `<td>${esc(r.dataset.replace("synthetic_", ""))}</td>` : ""}<td>${esc(r.rule)}</td><td>${esc(r.action)}</td><td>${Number(r.rows_affected).toLocaleString()}</td><td>${esc(r.detail)}</td><td class="muted">${esc(String(r.example_ids).slice(0, 60))}</td></tr>`).join("")}
+      </tbody></table></div></div>`).join("");
+}
+
+function renderMethod() {
+  document.getElementById("signal-table").innerHTML = SIGNALS.map(([k, label, what, missing]) =>
+    `<tr><td>${label}</td><td>${what}</td><td>${D.method.reliability[k]}</td><td>${missing}</td></tr>`).join("");
+  document.getElementById("band-legend").innerHTML = [["looks genuine", "66–100"], ["mixed signals", "45–65 (flagged)"], ["suspicious", "1–44 (flagged)"], ["insufficient data", "fewer than 5 ratings"]]
+    .map(([b, r]) => `<div class="d-flex justify-content-between align-items-center">${bandBadge(b)}<span class="sub">${r}</span></div>`).join("");
+}
+
+document.getElementById("generated").textContent = `Data generated ${D.generated}`;
+document.documentElement.setAttribute("data-bs-theme", themeName());
+setupProducts(); renderQuality(); renderMethod();
+// charts in hidden tabs need a visible canvas: draw them when the tab opens
+document.querySelector('[data-bs-target="#tab-eval"]').addEventListener("shown.bs.tab", renderEval);
+document.querySelector('[data-bs-target="#tab-real"]').addEventListener("shown.bs.tab", renderReal);
+document.querySelector('[data-bs-target="#tab-method"]').addEventListener("shown.bs.tab", renderMethod);
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach((b) =>
+  b.addEventListener("shown.bs.tab", () => history.replaceState(null, "", b.dataset.bsTarget.replace("#tab-", "#"))));
+// open the tab named in the address, e.g. index.html#eval
+const startTab = document.querySelector(`[data-bs-target="#tab-${location.hash.slice(1)}"]`);
+if (startTab) bootstrap.Tab.getOrCreateInstance(startTab).show();
+</script>
+</body>
+</html>
