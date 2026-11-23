@@ -1,0 +1,14 @@
+dataset,step,rule,column,action,rows_affected,example_ids,source,detail
+amazon_2023_electronics,1,R7_date_normalized,review_date,normalized,395023,AMZ-cff8edcc26978e92;AMZ-709b90666bddd968;AMZ-f062b6e14c0cd581;AMZ-b200d7fc6337df78;AMZ-2a1e3cd74025c66c,amazon_2023_electronics,from Unix milliseconds
+amazon_2023_electronics,2,R7_date_normalized,review_date,normalized,0,,amazon_2023_electronics,from Unix seconds
+amazon_2023_electronics,3,R4_invalid_date,review_date,excluded_from_time,0,,amazon_2023_electronics,"0 missing, 0 unparseable or out of range"
+amazon_2023_electronics,4,R3_duplicate,review_id,removed,993,AMZ-5e98af59cfc5d34c;AMZ-2f9fc4271c4bab42;AMZ-e65cb2f5cad708df;AMZ-1495cd0090e6a350;AMZ-b2aa89f59bae1137,amazon_2023_electronics,key (a): same review_id
+amazon_2023_electronics,5,R3_duplicate,review_text,removed,156,AMZ-9dd9e2d1426cdba1;AMZ-2b85c2baae4477ff;AMZ-b80b5f8006700eba;AMZ-af2314318502b95b;AMZ-f50b1ba8d959c80b,amazon_2023_electronics,key (b): same reviewer + product + text + date
+amazon_2023_electronics,6,R1_rating_out_of_range,rating,excluded_from_rating,0,,amazon_2023_electronics,
+amazon_2023_electronics,7,R2_rating_missing,rating,excluded_from_rating,0,,amazon_2023_electronics,
+amazon_2023_electronics,8,R5_verification_unknown,verified_purchase,set_unknown,0,,amazon_2023_electronics,
+amazon_2023_electronics,9,R6_text_missing,review_text,excluded_from_text,75,AMZ-82ce6ea6db236c1d;AMZ-32680c10acae7528;AMZ-f9ae751933fcc512;AMZ-c6ac5cd1d1adc0f0;AMZ-2100639ac0263eed,amazon_2023_electronics,
+amazon_2023_electronics,10,R0_missing_product_id,product_id,flagged,0,,amazon_2023_electronics,
+amazon_2023_electronics,11,R0_missing_review_id,review_id,flagged,0,,amazon_2023_electronics,
+amazon_2023_electronics,12,R8_low_sample_too_small,product_id,flagged,0,,amazon_2023_electronics,products with < 5 valid ratings
+amazon_2023_electronics,13,R8_low_sample_small,product_id,flagged,19,,amazon_2023_electronics,products with 5-19 valid ratings
