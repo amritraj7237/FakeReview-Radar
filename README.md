@@ -20,7 +20,7 @@ Polaris OJT 2026 · Data Analysis track · PST_DA_006 · Mentor: Tanishka.
 ## Team
 
 - Amrit — repo owner; synthetic data generator, Bimodal Suspicion Index, trust score
-- Chirag — environment, data dictionary, cleaning rules, rating metrics, data loading
+- Chirag Malik— environment, data dictionary, cleaning rules, rating metrics, data loading
 
 ## Setup
 
