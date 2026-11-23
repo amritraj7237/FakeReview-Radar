@@ -140,13 +140,61 @@ histograms, evaluation against labelled synthetic data. Not done: browser extens
   10-row dirty test fixture; rating metrics (`analysis/radar/metrics.py`,
   checked against paper answers and scipy); loaded and inspected the first
   5,000 real Electronics reviews (`docs/WEEK1_FINDINGS.md`).
-- What we learned:
-- What's next:
+- What we learned: real Electronics ratings are strongly J-shaped (mostly 5★,
+  a smaller 1★ bump), so a high 1★ + 5★ share on its own is normal; BSI has to
+  be judged against that baseline, not against a flat distribution.
+- What's next: turn the cleaning rules into code, get a much larger real sample,
+  and make the synthetic generator produce separate labelled sets.
 
-### Weeks 2–4
+### Week 2: data foundations
 
-- Built: cleaning pipeline + log, product table, four warning signals, trust
-  score, evaluation on tuning / test / stress synthetic sets, real-data analysis
-  of 393,874 Electronics reviews, dashboard, findings report.
-- What we learned:
-- What's next:
+- Amrit: upgraded the synthetic generator (`analysis/generate_synthetic.py`) to
+  five labelled patterns (2 genuine, 3 manipulated) with a `standard` and a
+  harder `hard` profile, giving separate tuning (seed 42), test (seed 7) and
+  stress sets; documented it in [SYNTHETIC_DATA.md](docs/SYNTHETIC_DATA.md);
+  refined `bsi.py` with small-sample shrinkage and updated [BSI.md](docs/BSI.md).
+- Chirag: built the cleaning pipeline (`analysis/radar/cleaning.py`) with a
+  per-rule cleaning log, updated [CLEANING_RULES.md](docs/CLEANING_RULES.md)
+  and `tests/test_cleaning.py`; wrote `analysis/download_sample.py` to pull the
+  first 1,000,000 Amazon Electronics lines plus product metadata; documented
+  the source in [DATASET.md](docs/DATASET.md) and extended the
+  [data dictionary](docs/DATA_DICTIONARY.md).
+- What we learned: after cleaning, 1,000,000 raw lines become 393,874 usable
+  reviews of 6,335 products; 94 % of reviews are verified purchases. The raw
+  file is grouped by reviewer, so the sample is not random.
+- What's next: per-product table and the warning signals.
+
+### Week 3: signals and trust score
+
+- Amrit: wrote the four warning signals (`analysis/radar/signals.py`: BSI,
+  5★ inflation, unverified share, 7/30-day date burst) and the noisy-OR trust
+  score from 1 to 100 (`analysis/radar/trust.py`, flag below 66), with
+  [TRUST_SCORE.md](docs/TRUST_SCORE.md), `tests/test_signals.py` and
+  `tests/test_trust.py`.
+- Chirag: built the per-product table (`analysis/radar/products.py`: star
+  shares, mean, variance, skewness, kurtosis, sample-size status), added
+  `tests/test_scenarios.py` for the synthetic patterns, and updated
+  `analysis/inspect_sample.py` for the new data layout.
+- What we learned: no single signal is enough. BSI can't tell a bimodal attack
+  from a genuinely divisive product, so on its own it only lowers trust to 51;
+  combining signals is what pushes manipulated products below the flag line.
+- What's next: measure accuracy on the labelled sets, then run on real data.
+
+### Week 4: evaluation, real data, dashboard, report
+
+- Amrit: wrote `analysis/evaluate.py` (confusion matrices, per-pattern and
+  single-signal results, error lists for tuning / test / stress sets) and
+  [EVALUATION.md](docs/EVALUATION.md); wrote [LIMITATIONS.md](docs/LIMITATIONS.md)
+  (suspicious pattern vs proven fraud); co-wrote the
+  [findings report](docs/FINDINGS_REPORT.md).
+- Chirag: wrote `analysis/analyze_real.py` (real-data run, verified vs
+  unverified comparison, flagged-products CSV) and the shared chart helpers in
+  `analysis/radar/charts.py`; built the dashboard (`dashboard/index.html`,
+  `analysis/build_dashboard.py`) and the one-command `analysis/run_pipeline.py`;
+  updated this README; co-wrote the findings report.
+- What we learned: on the test set the flag reaches 99.5 % accuracy, 100 %
+  precision and 99.2 % recall, but on the stress set (small, slow attacks)
+  accuracy falls to 53 % (recall 21.7 %). On real data 160 of 6,335 products
+  (2.5 %) are flagged. Unverified reviews are more extreme (mean 3.90★ vs 4.30★).
+- What's next: browser extension (`extension/`), and better detection of slow,
+  small attacks, which rating shape alone can't catch.
