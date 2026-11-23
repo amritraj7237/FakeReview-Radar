@@ -1,0 +1,30 @@
+{
+  "raw_lines_downloaded": 1000000,
+  "reviews_after_cleaning": 393874,
+  "products": 6335,
+  "products_by_status": {
+    "ok": 6316,
+    "small": 19
+  },
+  "date_range": [
+    "1998-03-03",
+    "2023-03-20"
+  ],
+  "pct_verified_reviews": 0.9403007053016955,
+  "flagged_products": 160,
+  "flag_rate_ok_products": 0.025174160861304622,
+  "bands": {
+    "looks genuine": 6175,
+    "mixed signals": 136,
+    "suspicious": 24
+  },
+  "reason_counts": {
+    "bsi": 1580,
+    "inflation": 931,
+    "unverified": 407,
+    "burst": 192
+  },
+  "burst_rate_high_bsi": 0.04040404040404041,
+  "burst_rate_low_bsi": 0.04070945945945946,
+  "n_high_bsi": 396
+}
