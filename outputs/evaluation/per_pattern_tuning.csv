@@ -1,0 +1,6 @@
+pattern,products,manipulated,flagged,median_trust,flag_rate
+genuine_j,40,False,0,100.0,0.0
+genuine_divisive,40,False,1,76.5,0.025
+bimodal_attack,40,True,40,27.5,1.0
+positive_stuffing,40,True,36,40.5,0.9
+burst_campaign,40,True,40,31.0,1.0
