@@ -1,0 +1,2 @@
+error,product_id,pattern,n_rated,trust_score,bsi,s_inflation,s_unverified,s_burst,reason_1,reason_2,reason_3
+false negative,SYN0152,positive_stuffing,45,74,0.0,0.0,0.20107323232323232,0.2228796844181459,15 of 45 dated reviews (33%) arrived within 30 days from 2025-01-19.,27% of reviews are not verified purchases (typical: under 15%); unverified reviewers rate 0.4★ higher on average.,
