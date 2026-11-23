@@ -1,0 +1,6 @@
+error,product_id,pattern,n_rated,trust_score,bsi,s_inflation,s_unverified,s_burst,reason_1,reason_2,reason_3
+false negative,SYN0148,positive_stuffing,284,66,0.0,0.0,0.15653669724770644,0.40129236960222886,103 of 284 dated reviews (36%) arrived within 30 days from 2025-08-20.,,
+false negative,SYN0125,positive_stuffing,311,67,0.20066669119843344,0.0,0.147508038585209,0.2702755958405359,105 of 311 dated reviews (34%) arrived within 30 days from 2025-09-15.,Ratings split into two camps: 13% 1★ and 64% 5★ with few in between (BSI 0.20).,
+false negative,SYN0141,positive_stuffing,316,67,0.0,0.0,0.13893723405697672,0.38943282747045227,114 of 316 dated reviews (36%) arrived within 30 days from 2025-05-01.,,
+false negative,SYN0122,positive_stuffing,193,79,0.0,0.0,0.09189207812912475,0.24251862270894028,64 of 193 dated reviews (33%) arrived within 30 days from 2025-11-06.,,
+false positive,SYN0078,genuine_divisive,137,65,0.7035297031978056,0.0,0.0,0.0,Ratings split into two camps: 39% 1★ and 42% 5★ with few in between (BSI 0.70).,,
