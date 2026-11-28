@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "FakeReview Radar",
+  "version": "0.1.0",
+  "description": "Shows a heuristic 1-100 review trust score on Amazon product pages. A pattern worth a closer look, never proof of fake reviews.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.amazon.com/*",
+        "https://*.amazon.in/*",
+        "https://*.amazon.co.uk/*",
+        "https://*.amazon.ca/*",
+        "https://*.amazon.de/*",
+        "https://*.amazon.com.au/*"
+      ],
+      "js": ["radar.js", "parse.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

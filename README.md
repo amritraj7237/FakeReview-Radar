@@ -68,6 +68,7 @@ synthetic data only.
 | Analyse real data | `analysis/analyze_real.py` | `outputs/real/` (cleaning log, product table, flagged CSV, charts) |
 | Dashboard data | `analysis/build_dashboard.py` | `dashboard/data.js` |
 | Everything above | `analysis/run_pipeline.py` | all of it |
+| Browser extension data (after the pipeline) | `analysis/export_extension.py` | `extension/data/scores.json`, see [extension/README.md](extension/README.md) |
 
 Why a virtual environment: each project gets its own package versions, so this
 project can't break (or be broken by) anything else on your laptop, and anyone
@@ -95,7 +96,7 @@ analysis/radar/      reusable code: cleaning, metrics, bsi, signals, trust, prod
 dashboard/           index.html (Bootstrap + Chart.js) and generated data.js
 data/                input data; small samples only (data/raw/ is git-ignored)
 docs/                definitions and write-ups (data dictionary, BSI, trust score, ...)
-extension/           browser extension (later weeks)
+extension/           Chrome/Edge extension: trust-score card on Amazon product pages
 tests/               automated checks
 outputs/             anything our code produces (plots, reports); can always be regenerated
 ```
@@ -125,7 +126,9 @@ Good-to-have, also done: review-date burst detection, verified vs unverified
 comparison, CSV export of flagged products (`outputs/real/flagged_products_real.csv`),
 explanations for each warning. Stretch, also done: ≥ 1,000 records (393,874),
 variance / skewness / kurtosis for verified vs unverified, comparative
-histograms, evaluation against labelled synthetic data. Not done: browser extension.
+histograms, evaluation against labelled synthetic data, and a browser extension
+prototype that shows the trust score on Amazon product pages
+([extension/README.md](extension/README.md)).
 
 ## Weekly log
 
